@@ -18,7 +18,7 @@ class CustomEnv(gym.Env):
 
         Parameters:
             self. validator_size : The size of the validators
-            self. strategy_space : The space of strategies: malicious v.s. honest
+            self. strategy_space : The space of strategies: malicious v.s honest
             self. _strategy_to_name : The mapping from strategy to name
             self. status_spaces : The space of statuses: propose, vote, committee
             self. _status_to_name : The mapping from status to name
@@ -40,14 +40,17 @@ class CustomEnv(gym.Env):
         self._status_to_name = {0: "propose", 
                                 1: "vote"} # The mapping from status to name
 
-        # So every validator has a strategy and an status
+        # So each validator has a strategy and an status
 
 
         # AGENT: The PoS Ethereum Blockchain, to learn the reward and penalty policies
         self.action_space = spaces.Discrete(2)
-        self._action_to_name = {0: "reward",
-                                1: "penality"} # The mapping from action to name
+        self._action_to_alpha = {0: 0,
+                                1: 0} # The mapping from action to name
         
+        # The action to learn: the value of alpha in penalty
+        self.action_space = spaces.Box(-1, 1, shape=(1,), dtype=np.float32)
+
         self.observation_space = spaces.Box(0, 1, shape=(2,))
 
         self.window = None
@@ -55,7 +58,6 @@ class CustomEnv(gym.Env):
 
 
         super(CustomEnv, self).__init__()
-        raise NotImplementedError
 
     def reset(self, seed = None, options = None):
         """
@@ -66,9 +68,7 @@ class CustomEnv(gym.Env):
         observation : numpy array
             The initial observation of the environment.
         """
-
-        # We need the following line to seed self.np_random
-        super().reset(seed = seed)
+ 
 
         # Generate the strategies of the validators
         self._strategies = self.np_random.randint(
@@ -83,16 +83,15 @@ class CustomEnv(gym.Env):
             Question to be answered:
             How to generate the initial value of alpha?
         """
-        self._alpha_penalty = self.np_random.uniform(0, 1)
+        self._alpha_penalty = 1
 
         observation = self._get_obs()
         info = self._get_info()
 
         return observation, info
 
-        raise NotImplementedError
 
-    def step(self, action, strategy, status):
+    def step(self, action, validator_action, strategy, status):
         """
         Take a step in the environment.
 
@@ -114,27 +113,19 @@ class CustomEnv(gym.Env):
         """
 
         # Get the action of the PoS Ethereum: reward or penalty
-        action = self._action_to_name[action]
+        action = self._action_to_alpha[validator_action]
 
         # Update the value of alpha in penalty
-        """
-            Question to be answered:
-            How to update the value of alpha in penalty?
-        """
-        self._alpha_penalty = self._alpha_penalty + action
+        self._alpha_penalty = self._alpha_penalty + action # Action is a float
 
         terminated = np.array_equal(sum(self._strategy_to_name == 1), 0)
-        reward = sum(self._strategy_to_name == 1) / self.validator_size
+        reward = sum(self._strategy_to_name == 0) / self.validator_size
 
         observation = self._get_obs()
         info = self._get_info()
 
-        if self.render_mode == "human":
-            self._render_frame()
-
         return observation, reward, terminated, False, info
 
-        raise NotImplementedError
 
     def render(self, mode='human'):
         """
@@ -144,11 +135,5 @@ class CustomEnv(gym.Env):
         ----------
         mode : str
             The mode to render the environment in.
-        """
-        raise NotImplementedError
-
-    def close(self):
-        """
-        Clean up any resources used by the environment.
         """
         raise NotImplementedError
