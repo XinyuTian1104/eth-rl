@@ -81,7 +81,7 @@ class CustomEnv(gym.Env):
         # Generate the initial value of alpha
         """
             Question to be answered:
-            If the value of alpha should be a function of something?
+            How to generate the initial value of alpha?
         """
         self._alpha_penalty = self.np_random.uniform(0, 1)
 
@@ -117,21 +117,15 @@ class CustomEnv(gym.Env):
         action = self._action_to_name[action]
 
         # Update the value of alpha in penalty
+        """
+            Question to be answered:
+            How to update the value of alpha in penalty?
+        """
         self._alpha_penalty = self._alpha_penalty + action
 
+        terminated = np.array_equal(sum(self._strategy_to_name == 1), 0)
+        reward = sum(self._strategy_to_name == 1) / self.validator_size
 
-
-        behavior = self._strategy_to_name[strategy]
-
-        # direction = self._action_to_direction[action]
-
-        # We use `np.clip` to make sure we don't leave the grid
-        self._agent_location = np.clip(
-            self._agent_location + direction, 0, self.size - 1
-        )
-        # An episode is done iff the agent has reached the target
-        terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
 
@@ -139,8 +133,6 @@ class CustomEnv(gym.Env):
             self._render_frame()
 
         return observation, reward, terminated, False, info
-
-
 
         raise NotImplementedError
 
