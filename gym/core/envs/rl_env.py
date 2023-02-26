@@ -1,5 +1,6 @@
 import gymnasium as gym
 from gymnasium import spaces
+import numpy as np
 
 def _get_obs(self):
     return {"validators": self._strategies,
@@ -15,7 +16,15 @@ class CustomEnv(gym.Env):
         """
         Initialize your custom environment.
 
-        Parameters
+        Parameters:
+            self. validator_size : The size of the validators
+            self. strategy_space : The space of strategies: malicious v.s. honest
+            self. _strategy_to_name : The mapping from strategy to name
+            self. status_spaces : The space of statuses: propose, vote, committee
+            self. _status_to_name : The mapping from status to name
+            self. action_space : The space of actions: reward, penalty
+            self. _action_to_name : The mapping from action to name
+            self. observation_space : The space of observations: validators, proposing_order
         ----------
         """
         # ENVIRONMENT: The validators
@@ -33,13 +42,13 @@ class CustomEnv(gym.Env):
 
         # So every validator has a strategy and an status
 
+
         # AGENT: The PoS Ethereum Blockchain, to learn the reward and penalty policies
         self.action_space = spaces.Discrete(2)
         self._action_to_name = {0: "reward",
                                 1: "penality"} # The mapping from action to name
         
         self.observation_space = spaces.Box(0, 1, shape=(2,))
-
 
         self.window = None
         self.clock = None
@@ -69,17 +78,21 @@ class CustomEnv(gym.Env):
         # Generate the proposing order
         self._proposing_order = self.np_random.permutation(self.validator_size)
 
+        # Generate the initial value of alpha
+        """
+            Question to be answered:
+            If the value of alpha should be a function of something?
+        """
+        self._alpha_penalty = self.np_random.uniform(0, 1)
+
         observation = self._get_obs()
         info = self._get_info()
-
-        if self.render_mode == "human":
-            self._render_frame()
 
         return observation, info
 
         raise NotImplementedError
 
-    def step(self, action):
+    def step(self, action, strategy, status):
         """
         Take a step in the environment.
 
@@ -99,6 +112,36 @@ class CustomEnv(gym.Env):
         info : dict
             Additional information about the step.
         """
+
+        # Get the action of the PoS Ethereum: reward or penalty
+        action = self._action_to_name[action]
+
+        # Update the value of alpha in penalty
+        self._alpha_penalty = self._alpha_penalty + action
+
+
+
+        behavior = self._strategy_to_name[strategy]
+
+        # direction = self._action_to_direction[action]
+
+        # We use `np.clip` to make sure we don't leave the grid
+        self._agent_location = np.clip(
+            self._agent_location + direction, 0, self.size - 1
+        )
+        # An episode is done iff the agent has reached the target
+        terminated = np.array_equal(self._agent_location, self._target_location)
+        reward = 1 if terminated else 0  # Binary sparse rewards
+        observation = self._get_obs()
+        info = self._get_info()
+
+        if self.render_mode == "human":
+            self._render_frame()
+
+        return observation, reward, terminated, False, info
+
+
+
         raise NotImplementedError
 
     def render(self, mode='human'):
