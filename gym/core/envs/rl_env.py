@@ -2,6 +2,8 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
+from funcs import Validator
+
 def _get_obs(self):
     return {"validators": self._strategies,
             "proposing_order": self._proposing_order}
