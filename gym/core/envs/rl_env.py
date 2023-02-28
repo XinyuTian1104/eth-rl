@@ -4,15 +4,6 @@ import numpy as np
 
 from validators import Validator
 
-def _get_obs(self):
-    return {"validators": self._strategies,
-            "proposing_order": self._proposing_order}
-
-def _get_info(self):
-    return {
-        "honest_proportion": sum(self._strategies == 0) / self.validator_size,
-    }
-
 class CustomEnv(gym.Env):
     def __init__(self):
         """
@@ -25,16 +16,12 @@ class CustomEnv(gym.Env):
             self. status_spaces : The space of statuses: propose, vote, committee
             self. _status_to_name : The mapping from status to name
             self. action_space : The space of actions: reward, penalty
-            self. _action_to_name : The mapping from action to name
             self. observation_space : The space of observations: validators, proposing_order
         ----------
         """
         # ENVIRONMENT: The validators
         self.validator_size = 100 # The size of the validators
         
-
-
-
         # The strategies of the validators
         self.strategy_space = spaces.Discrete(2) # The space of strategies: malicious v.s. honest
         self._strategy_to_name = {0: "honest", 
@@ -49,10 +36,7 @@ class CustomEnv(gym.Env):
 
 
         # AGENT: The PoS Ethereum Blockchain, to learn the reward and penalty policies
-        self.action_space = spaces.Discrete(2)
-        self._action_to_alpha = {0: 0,
-                                1: 0} # The mapping from action to name
-        
+        self.alpha = 1
         # The action to learn: the value of alpha in penalty
         self.action_space = spaces.Box(-1, 1, shape=(1,), dtype=np.float32)
 
@@ -74,22 +58,15 @@ class CustomEnv(gym.Env):
             The initial observation of the environment.
         """
  
-
-        # Generate the strategies of the validators
-        
-        
-        self._strategies = self.np_random.randint(
-            0, self.strategy_space.n, size=self.validator_size
-        )
-
-        # Generate the proposing order
-        self._proposing_order = self.np_random.permutation(self.validator_size)
+        validators = []
+        for i in range(self.validator_size):
+            strategy = np.random.randint(0, 2)
+            status = 0
+            current_balance = 32
+            effective_balance = 32
+            validators.append(Validator(strategy, status, current_balance, effective_balance))
 
         # Generate the initial value of alpha
-        """
-            Question to be answered:
-            How to generate the initial value of alpha?
-        """
         self._alpha_penalty = 1
 
         observation = self._get_obs()
@@ -119,6 +96,10 @@ class CustomEnv(gym.Env):
             Additional information about the step.
         """
 
+        # Generate the proposing order
+        proposing_order = np.random.permutation(self.validator_size)
+
+    
         # Get the action of the PoS Ethereum: reward or penalty
         action = self._action_to_alpha[validator_action]
 
@@ -144,3 +125,12 @@ class CustomEnv(gym.Env):
             The mode to render the environment in.
         """
         raise NotImplementedError
+
+def _get_obs(self):
+    return {"validators": self._strategies,
+            "proposing_order": self._proposing_order}
+
+def _get_info(self):
+    return {
+        "honest_proportion": sum(self._strategies == 0) / self.validator_size,
+    }

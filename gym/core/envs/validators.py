@@ -1,4 +1,5 @@
 import numpy as np
+
 class Validator():
 
     """
@@ -18,7 +19,7 @@ class Validator():
     """
 
     def __init__(self, strategy, status, current_balance, effective_balance) -> None:
-        self.strategy = strategy 
+        self.strategy = strategy
         self.status = status
         self.current_balance = current_balance
         self.effective_balance = effective_balance
