@@ -1,3 +1,4 @@
+import numpy as np
 class Validator():
 
     """
@@ -9,10 +10,12 @@ class Validator():
             self. current_balance : The current balance of the validator
     """
 
-    def __init__(self, strategy, status, current_balance) -> None:
-        self.strategy = strategy # The strategy of the validator
+    def __init__(self, strategy, status, current_balance, proportion, total_active_balance) -> None:
+        self.strategy = strategy 
         self.status = status
-        # self.current_balance = current_balance
+        self.current_balance = current_balance
+        self.proportion = proportion
+        self.total_active_balance = total_active_balance
 
     def get_strategy(self) -> int:
         return self.strategy
@@ -21,19 +24,15 @@ class Validator():
         return self.status
     
     def get_current_balance(self) -> float:
-        self.current_balance = self.current_balance + self.reward() - self.penalty()
-        
+        self.current_balance = self.current_balance + self.duty_weight() * self.base_reward() * self.proportion
         return self.current_balance
         
-    def balance_update(self) -> float:
-        balance_update = self.duty_weight() * self.base_reward()
-        return self.current_balance + self.reward() - self.penalty()
-
-    def base_reward(self) -> float:
-        baseReward = self.get_effective_balance() * self.duty_weight()
-        return 0
+    def get_base_reward(self) -> float:
+        base_reward = self.get_effective_balance() / (4 * np.sqrt(self.total_active_balance))
+        return base_reward
     
     def get_effective_balance(self) -> float:
+        
         return 0
     
     def duty_weight(self) -> float:

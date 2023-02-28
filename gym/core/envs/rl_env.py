@@ -2,7 +2,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-from funcs import Validator
+from validators import Validator
 
 def _get_obs(self):
     return {"validators": self._strategies,
