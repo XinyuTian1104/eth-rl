@@ -38,7 +38,7 @@ class Validator():
         base_reward = self.get_effective_balance() * 4 / np.sqrt(total_active_balance)
         return base_reward
     
-    def duty_weight(self) -> float:
+    def duty_weight(self, alpha) -> float:
         # when the validator play the honest strategy
         if self.strategy == 0:
             # when the validator is a proposer
@@ -56,14 +56,14 @@ class Validator():
                 return 0
             # when the validator is a voter: missing voting
             elif self.status == 1:
-                return -27/32
+                return (-27/32) * alpha
             else:
                 raise ValueError("The status of the validator is not valid.")
         else:
             raise ValueError("The strategy of the validator is not valid.")
 
-    def get_balances(self, proportion_of_honest) -> float:
-        update = self.duty_weight() * self.base_reward() * proportion_of_honest
+    def get_balances(self, proportion_of_honest, alpha, total_active_balance) -> float:
+        update = self.duty_weight(alpha = alpha) * self.base_reward(total_active_balance = total_active_balance) * proportion_of_honest
         # update the current balance
         self.current_balance = self.current_balance + update
         # update the effective balance
