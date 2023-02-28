@@ -32,6 +32,9 @@ class CustomEnv(gym.Env):
         # ENVIRONMENT: The validators
         self.validator_size = 100 # The size of the validators
         
+
+
+
         # The strategies of the validators
         self.strategy_space = spaces.Discrete(2) # The space of strategies: malicious v.s. honest
         self._strategy_to_name = {0: "honest", 
@@ -73,6 +76,8 @@ class CustomEnv(gym.Env):
  
 
         # Generate the strategies of the validators
+        
+        
         self._strategies = self.np_random.randint(
             0, self.strategy_space.n, size=self.validator_size
         )
