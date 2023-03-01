@@ -104,7 +104,7 @@ class CustomEnv(gym.Env):
                 self.validators[i].status = 0
             else:
                 self.validators[i].status = 1
-            self.validators[i].current_balance, self.validators[i].effective_balance = self.validators[i].get_balances(proportion_of_honest, self.alpha, self.total_active_balance)
+            self.validators[i].current_balance, self.validators[i].effective_balance = self.validators[i].get_balances(self.proportion_of_honest, self.alpha, self.total_active_balance)
             self.total_active_balance += self.validators[i].current_balance
 
         # Update the value of alpha in penalty
