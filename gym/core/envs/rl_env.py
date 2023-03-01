@@ -1,8 +1,8 @@
-import gymnasium as gym
-from gymnasium import spaces
+import gym
+from gym import spaces
 import numpy as np
 
-from validators import Validator
+from core.envs.validators import Validator
 
 class CustomEnv(gym.Env):
     def __init__(self, validator_size = 100):
