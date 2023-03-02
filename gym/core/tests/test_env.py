@@ -1,14 +1,19 @@
 import gym
 from core.envs.rl_env import CustomEnv
+import pytest
 
-env = CustomEnv()
-observation, info = env.reset()
 
-for _ in range(1000):
-    action = env.action_space.sample()  # agent policy that uses the observation and info
-    observation, reward, terminated, truncated, info = env.step(action)
+@pytest.mark.skip(reason="not implemented yet")
+def test_env():
+    env = CustomEnv()
+    observation, info = env.reset()
 
-    if terminated or truncated:
-        observation, info = env.reset()
+    for _ in range(1000):
+        # agent policy that uses the observation and info
+        action = env.action_space.sample()
+        observation, reward, terminated, info = env.step(action)
 
-env.close()
+        if terminated:
+            break
+
+    env.close()

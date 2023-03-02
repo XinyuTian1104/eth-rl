@@ -23,22 +23,17 @@ class Validator():
         self.status = status
         self.current_balance = current_balance
         self.effective_balance = effective_balance
-
-    def get_strategy(self) -> int:
-        return self.strategy
-    
-    def get_status(self) -> int:
-        return self.status
     
     def get_base_reward(self, total_active_balance) -> float:
         # base_reward = effective_balance * base_reward_factor / 
         #               (base_rewards_per_epoch * sqrt(sum(active_balance)))
         # where base_reward_factor is 64, base_rewards_per_epoch is 4 
         # and sum(active balance) is the total staked ether across all active validators.
-        base_reward = self.get_effective_balance() * 4 / np.sqrt(total_active_balance)
+        base_reward = self.effective_balance * 4 / np.sqrt(total_active_balance)
         return base_reward
     
     def duty_weight(self, alpha) -> float:
+        # print("alpha: ", alpha)
         # when the validator play the honest strategy
         if self.strategy == 0:
             # when the validator is a proposer
@@ -56,14 +51,18 @@ class Validator():
                 return 0
             # when the validator is a voter: missing voting
             elif self.status == 1:
-                return (-27/32) * alpha
+                return alpha * -27/32
             else:
                 raise ValueError("The status of the validator is not valid.")
         else:
             raise ValueError("The strategy of the validator is not valid.")
 
-    def get_balances(self, proportion_of_honest, alpha, total_active_balance) -> float:
-        update = self.duty_weight(alpha = alpha) * self.base_reward(total_active_balance = total_active_balance) * proportion_of_honest
+    def update_balances(self, proportion_of_honest, alpha, total_active_balance) -> float:
+        update = self.duty_weight(alpha = alpha) * self.get_base_reward(total_active_balance = total_active_balance) * proportion_of_honest
+        # print(f"duty_weight: {self.duty_weight(alpha = alpha)}")
+        # print(f"base_reward: {self.get_base_reward(total_active_balance = total_active_balance)}")
+        # print(f"proportion_of_honest: {proportion_of_honest}")
+        # print(f"update: {update}")
         # update the current balance
         self.current_balance = self.current_balance + update
         # update the effective balance
@@ -73,5 +72,5 @@ class Validator():
             self.effective_balance = self.effective_balance - 1
         else:
             pass
-        return self.current_balance, self.effective_balance
+        return
 
