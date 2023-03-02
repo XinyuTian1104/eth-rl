@@ -76,7 +76,7 @@ class CustomEnv(gym.Env):
             #     strategy = 0
             # else:
             #     strategy = 1
-            strategy = self.validators[i].strategy = np.random.choice([0, 1], p=[0.5, 0.5])
+            strategy = np.random.randint(0, 2)
             status = 1
             current_balance = 32
             effective_balance = 32
