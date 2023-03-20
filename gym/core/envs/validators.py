@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Validator():
 
     """
@@ -23,17 +24,17 @@ class Validator():
         self.status = status
         self.current_balance = current_balance
         self.effective_balance = effective_balance
-    
+
     def get_base_reward(self, total_active_balance) -> float:
-        # base_reward = effective_balance * base_reward_factor / 
+        # base_reward = effective_balance * base_reward_factor /
         #               (base_rewards_per_epoch * sqrt(sum(active_balance)))
-        # where base_reward_factor is 64, base_rewards_per_epoch is 4 
+        # where base_reward_factor is 64, base_rewards_per_epoch is 4
         # and sum(active balance) is the total staked ether across all active validators.
-        base_reward = self.effective_balance * 4 / np.sqrt(total_active_balance)
+        base_reward = self.effective_balance * \
+            4 / np.sqrt(total_active_balance)
         return base_reward
-    
+
     def duty_weight(self, alpha) -> float:
-        # print("alpha: ", alpha)
         # when the validator play the honest strategy
         if self.strategy == 0:
             # when the validator is a proposer
@@ -57,12 +58,40 @@ class Validator():
         else:
             raise ValueError("The strategy of the validator is not valid.")
 
-    def update_balances(self, proportion_of_honest, alpha, total_active_balance) -> float:
-        update = self.duty_weight(alpha = alpha) * self.get_base_reward(total_active_balance = total_active_balance) * proportion_of_honest
-        # print(f"duty_weight: {self.duty_weight(alpha = alpha)}")
-        # print(f"base_reward: {self.get_base_reward(total_active_balance = total_active_balance)}")
-        # print(f"proportion_of_honest: {proportion_of_honest}")
-        # print(f"update: {update}")
+    def update_balances(self, proportion_of_honest, alpha, total_active_balance, proposer_strategy) -> float:
+        base_reward = self.get_base_reward(
+            total_active_balance=total_active_balance)
+
+        duty_weight = self.duty_weight(alpha)
+
+        if proportion_of_honest > 1/2:
+            if proposer_strategy == 0:  # honest proposer, a valid block
+                if self.strategy == 0:  # honest voters vote, all honest validators get rewards
+                    update = duty_weight * base_reward * proportion_of_honest
+                else:  # malicious voters do not vote, all malicious validators get penalized
+                    update = - duty_weight * base_reward * proportion_of_honest
+            else:  # malicious proposer, an invalid block
+                if self.strategy == 0:  # honest voters misses voting, all honest validators get penalized
+                    update = - duty_weight * base_reward * proportion_of_honest
+                else:  # since honest proposers are larger than 1/2, the malicious proposer is detected and penalized heavily
+                    if self.status == 0:  # proposer
+                        update = - base_reward * proportion_of_honest
+                    else:  # malicious voters vote for it but no consensus is reached.
+                        update = 0
+        else:  # proportion_of_honest <= 1/2, malicious validaters are larger
+            if proposer_strategy == 0:  # honest proposer, a valid block
+                if self.strategy == 0:  # honest voters vote, but no consensus is reached, all honest validators get 0
+                    update = 0
+                else:  # malicious voters do not vote, all malicious validators get penalized
+                    update = - duty_weight * base_reward * proportion_of_honest
+            else:  # malicious proposer, an invalid block
+                if self.strategy == 0:  # honest voters misses voting, all honest validators get penalized
+                    update = - duty_weight * base_reward * \
+                        (1 - proportion_of_honest)
+                else:  # malicious voters vote for it, all malicious validators get rewards
+                    update = duty_weight * base_reward * \
+                        (1 - proportion_of_honest)
+
         # update the current balance
         self.current_balance = self.current_balance + update
         # update the effective balance
@@ -73,4 +102,3 @@ class Validator():
         else:
             pass
         return
-

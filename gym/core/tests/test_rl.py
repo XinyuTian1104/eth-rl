@@ -1,37 +1,129 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pytest
 from core.envs.rl_env import CustomEnv
-from core.utils.helper_functions import SaveOnBestTrainingRewardCallback
-from stable_baselines3 import A2C
+from stable_baselines3 import A2C, DDPG, PPO
 from stable_baselines3.common import results_plotter
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.results_plotter import plot_results
 
 EPOCHS = 30
 
 
+@pytest.mark.skip()
+def test_ordinal():
+    env = CustomEnv()
+
+    observation = env.reset()
+
+    info_records = []
+    for _ in range(128):
+        action = [0]
+        observation, reward, done, info = env.step(action)
+        info_records.append(info)
+        if done:
+            break
+
+    df = pd.DataFrame(info_records)
+    df.to_csv("results/ordinal.csv", index=False)
+
+
+@pytest.mark.skip()
 def test_a2c():
     env = CustomEnv()
 
-    # Create log dir
-    log_dir = "tmp/"
-    os.makedirs(log_dir, exist_ok=True)
-    os.makedirs("results", exist_ok=True)
+    observation = env.reset()
 
-    # Create and wrap the environment
-    env = Monitor(env, log_dir)
+    timesteps = 128 * 32
 
-    timesteps = 32 * (2 ** 8)
+    model = A2C("MultiInputPolicy", env, verbose=0)
 
-    model = A2C("MultiInputPolicy", env, verbose=1)
-    callback = SaveOnBestTrainingRewardCallback(
-        check_freq=1000, log_dir=log_dir)
     model.learn(total_timesteps=timesteps,
-                progress_bar=True, callback=callback)
-    model.save("models/a2c")
+                progress_bar=True)
 
-    plot_results([log_dir], timesteps,
-                 results_plotter.X_TIMESTEPS, "A2C")
-    plt.savefig("results/a2c.png")
-    plt.show()
+    model.save('models/a2c')
+
+    # test model
+    observation = env.reset()
+
+    info_records = []
+    while 1:
+        action, _states = model.predict(observation, deterministic=True)
+        observation, reward, done, info = env.step(action)
+        info_records.append(info)
+        if done:
+            break
+
+    df = pd.DataFrame(info_records)
+    df.to_csv("results/a2c.csv", index=False)
+
+
+@pytest.mark.skip()
+def test_ddpg():
+    env = CustomEnv()
+    n_actions = env.action_space.shape[-1]
+    action_noise = NormalActionNoise(mean=np.zeros(
+        n_actions), sigma=0.1 * np.ones(n_actions))
+
+    model = DDPG("MultiInputPolicy", env, action_noise=action_noise, verbose=1)
+    model.learn(total_timesteps=128 * 32,
+                log_interval=10, progress_bar=True)
+    model.save("models/ddpg")
+
+    observation = env.reset()
+    info_records = []
+
+    for _ in range(128):
+        action, _states = model.predict(observation, deterministic=True)
+        observation, reward, done, info = env.step(action)
+        info_records.append(info)
+        if done:
+            observation = env.reset()
+
+    df = pd.DataFrame(info_records)
+    df.to_csv("results/ddpg.csv", index=False)
+
+
+@pytest.mark.skip()
+def test_ppo():
+    env = CustomEnv()
+    model = PPO("MultiInputPolicy", env, verbose=1)
+    model.learn(total_timesteps=128 * 32, progress_bar=True)
+    model.save("ppo")
+
+    observation = env.reset()
+    info_records = []
+    for _ in range(128):
+        action, _states = model.predict(observation, deterministic=True)
+        observation, reward, done, info = env.step(action)
+        info_records.append(info)
+        if done:
+            observation = env.reset()
+
+    df = pd.DataFrame(info_records)
+    df.to_csv("results/ppo.csv", index=False)
+
+# @pytest.mark.skip()
+
+
+def test_proportion_honest_on_convergence():
+    info_records = []
+    ratios = np.linspace(0.0, 1, 100)
+    for ratio in ratios:
+        env = CustomEnv(initial_honest_proportion=ratio)
+        observation = env.reset()
+
+        for _ in range(128):
+            action = [1]
+            observation, reward, done, info = env.step(action)
+            info['initial_honest_ratio'] = ratio
+            info_records.append(info)
+            if done:
+                observation = env.reset()
+
+    df = pd.DataFrame(info_records)
+    df.to_csv("results/honest_ratio.csv", index=False)
