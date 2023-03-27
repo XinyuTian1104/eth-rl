@@ -104,4 +104,12 @@ class Validator():
             self.effective_balance = self.effective_balance - 1
         else:
             pass
+
+        # set bound to effective balance from 0 to 32
+        self.effective_balance = max(0, self.effective_balance)
+        self.effective_balance = min(32, self.effective_balance)
+
         return
+
+    def __str__(self) -> str:
+        return '<Validator strategy={}, status={}, current_balance={}, effective_balance={}>'.format(self.strategy, self.status, self.current_balance, self.effective_balance)
