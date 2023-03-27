@@ -30,18 +30,12 @@ class CustomEnv(gym.Env):
         self.proportion_of_honest = 0
         self.counter = 0
         self.honest_initializer = initial_honest_proportion
-
-        # create the log directory if not exist
-        if not os.path.exists("logs"):
-            os.makedirs("logs")
-        # create logging file with timestamp
-        self.log_file = open(
-            "logs/log_" + str(datetime.datetime.now()) + ".txt", "w")
-        # create the file and make it empty
-        self.log_file.write("")
+        self.sum_of_reward = 0
+        self.sum_reward_honest = 0
+        self.sum_reward_all = 0
 
         """
-            matching from strategy to name:{0: "honest", 
+            matching from strategy to name:{0: "honest",
                                             1: "malicious"}
             matching from status to name: {0: "propose",
                                            1: "vote"}
@@ -61,6 +55,8 @@ class CustomEnv(gym.Env):
         self.window = None
         self.clock = None
 
+        self.reset()
+
         super(CustomEnv, self).__init__()
 
     def reset(self):
@@ -73,8 +69,6 @@ class CustomEnv(gym.Env):
             The initial observation of the environment.
         """
         self.validators = []
-        print(
-            f'[{self.validator_size/(1/self.honest_initializer)} / {self.validator_size}] honest')
         for i in range(self.validator_size):
             if i < self.validator_size / (1/self.honest_initializer):
                 strategy = 0
@@ -86,10 +80,8 @@ class CustomEnv(gym.Env):
             effective_balance = 32
             self.validators.append(
                 Validator(strategy, status, current_balance, effective_balance))
-            # print(f"validator {i} has strategy {strategy}, status {status}, current balance {current_balance}, and effective balance {effective_balance}.")
 
         random.shuffle(self.validators)
-        print('num_honest: ', self.validator_size / (1/self.honest_initializer))
 
         proportion = 0
         for i in range(self.validator_size):
@@ -98,18 +90,11 @@ class CustomEnv(gym.Env):
         self.initial_honest_proportion = proportion
         self.proportion_of_honest = proportion
 
-        print(
-            f"The initial proportion of honest: {self.initial_honest_proportion}.")
-
         # Generate the initial value of alpha
         self.alpha = 1
         self.total_active_balance = 32 * self.validator_size
 
         observation = self._get_obs()
-
-        # print('observation: ', observation)
-
-        # info = self._get_info()
 
         self.counter = 0
 
@@ -142,6 +127,7 @@ class CustomEnv(gym.Env):
         proposer = np.random.randint(0, self.validator_size)
 
         proportion = 0
+
         for i in range(self.validator_size):
             proportion += (self.validators[i].strategy ==
                            0) / self.validator_size
@@ -176,38 +162,41 @@ class CustomEnv(gym.Env):
 
         info = self._get_info()
 
-        # Update the strategies of validators
-        probability = 0
+        # calculate sum of reward of honest validators this round
+        self.sum_reward_honest = 0
         for i in range(self.validator_size):
             if self.validators[i].strategy == 0:
-                probability += self.validators[i].current_balance / \
-                    self.total_active_balance
-            else:
-                pass
+                self.sum_reward_honest += self.validators[i].reward
 
-        probability = max([0, probability])
-        probability = min([probability, 1])
+        # calculate sum of reward of all validators
+        self.sum_reward_all = 0
+        for i in range(self.validator_size):
+            self.sum_reward_all += self.validators[i].reward
+
+        # Update the strategies of validators
+        probability = self.sum_reward_honest / self.sum_reward_all
+
+        # sigmoid the probability using f(x) = 1 / (1 + e^(-4x)), which maps (approximately) to from [-inf, 1] to [0, 1]
+        probability = 1 / (1 + np.exp(-4 * probability))
+
+        print("sum of reward of honest validators: ", self.sum_reward_honest)
+        print("sum of reward of all validators: ", self.sum_reward_all)
+        print("probability: ", probability)
+
+        for i in range(self.validator_size):
+            self.validators[i].strategy = np.random.choice(
+                [0, 1], p=[probability, 1-probability])
 
         terminated = False
-        # if self.proportion_of_honest == 1:
-        #     terminated = True
-        # elif probability >= 1:
-        #     terminated = True
-        if self.counter > 128:
+
+        if self.counter > 64:  # set the counter
             terminated = True
 
         # counter increment
         self.counter += 1
 
-        payload = self.render()
-        self.log_file.write(str(payload) + "\n")
-
         if terminated:
             return observation, reward, terminated, info
-
-        for i in range(self.validator_size):
-            self.validators[i].strategy = np.random.choice(
-                [0, 1], p=[probability, 1-probability])
 
         return observation, reward, terminated, info
 
@@ -236,12 +225,17 @@ class CustomEnv(gym.Env):
         return payload
 
     def _get_obs(self):
-        return {"honest_proportion": [self.proportion_of_honest],
-                "target_honest_proportion": [1]}
+        return {
+            "honest_proportion": np.array([self.proportion_of_honest], dtype=np.float32),
+            "target_honest_proportion": np.array([1], dtype=np.float32)
+        }
 
     def _get_info(self):
         return {
             "honest_proportion": self.proportion_of_honest,
             "round": self.counter,
             "total_honest_effective_balance": self.get_total_honest_effective_balance(),
+            "alpha": self.alpha,
+            "sum_reward_honest": self.sum_reward_honest,
+            "sum_reward_all": self.sum_reward_all,
         }

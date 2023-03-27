@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 
 
-@pytest.mark.skip(reason="not implemented yet")
+@pytest.mark.skip(reason="passed")
 def test_env():
     env = CustomEnv()
     observation, info = env.reset()
@@ -20,7 +20,7 @@ def test_env():
 
         if terminated:
             break
-        
+
     df = pd.DataFrame(info_records)
 
     env.close()

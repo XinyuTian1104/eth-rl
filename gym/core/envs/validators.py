@@ -24,6 +24,7 @@ class Validator():
         self.status = status
         self.current_balance = current_balance
         self.effective_balance = effective_balance
+        self.reward = 0
 
     def get_base_reward(self, total_active_balance) -> float:
         # base_reward = effective_balance * base_reward_factor /
@@ -83,7 +84,8 @@ class Validator():
                 if self.strategy == 0:  # honest voters vote, but no consensus is reached, all honest validators get 0
                     update = 0
                 else:  # malicious voters do not vote, all malicious validators get penalized
-                    update = - duty_weight * base_reward * proportion_of_honest
+                    update = - duty_weight * base_reward * \
+                        (1 - proportion_of_honest)
             else:  # malicious proposer, an invalid block
                 if self.strategy == 0:  # honest voters misses voting, all honest validators get penalized
                     update = - duty_weight * base_reward * \
@@ -91,6 +93,7 @@ class Validator():
                 else:  # malicious voters vote for it, all malicious validators get rewards
                     update = duty_weight * base_reward * \
                         (1 - proportion_of_honest)
+        self.reward = update
 
         # update the current balance
         self.current_balance = self.current_balance + update
