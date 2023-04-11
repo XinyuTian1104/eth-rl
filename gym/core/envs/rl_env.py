@@ -11,7 +11,7 @@ from gym import spaces
 
 
 class CustomEnv(gym.Env):
-    def __init__(self, validator_size=100, initial_honest_proportion=0.5, limit=128):
+    def __init__(self, validator_size=100, initial_honest_proportion=0.5, limit=256):
         """
         Initialize your custom environment.
 
