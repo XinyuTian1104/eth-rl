@@ -21,7 +21,7 @@ initial_proportions = [0.001, 0.1, 0.2, 0.3,
                        0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.999]
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_ordinal():
     np.random.seed(SEED)
     env = CustomEnv()
@@ -40,7 +40,7 @@ def test_ordinal():
     df.to_csv("results/ordinal.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_ordinal_average():
     np.random.seed(SEED)
     env = CustomEnv()
@@ -62,7 +62,7 @@ def test_ordinal_average():
     df.to_csv("results/ordinal_avg.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_a2c():
     np.random.seed(SEED)
     env = CustomEnv()
@@ -93,7 +93,7 @@ def test_a2c():
     df.to_csv("results/a2c.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_train_multiple_a2c():
     for train_initial_proportion in initial_proportions:
         np.random.seed(SEED)
@@ -133,7 +133,7 @@ def test_train_multiple_a2c():
                 f"results/a2c_avg_{str(train_initial_proportion)}_{test_initial_proportion}.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_a2c_avg():
     np.random.seed(SEED)
     model = A2C.load('models/a2c')
@@ -156,7 +156,7 @@ def test_a2c_avg():
     df.to_csv("results/a2c_avg.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_ddpg():
     np.random.seed(SEED)
     env = CustomEnv()
@@ -183,7 +183,7 @@ def test_ddpg():
     df.to_csv("results/ddpg.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_ddpg_avg():
     np.random.seed(SEED)
     model = DDPG.load('models/ddpg')
@@ -206,7 +206,7 @@ def test_ddpg_avg():
     df.to_csv("results/ddpg_avg.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_ppo():
     np.random.seed(SEED)
     env = CustomEnv()
@@ -227,7 +227,7 @@ def test_ppo():
     df.to_csv("results/ppo.csv", index=False)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_ppo_avg():
     np.random.seed(SEED)
     model = PPO.load('models/ppo')

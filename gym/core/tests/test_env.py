@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 
 
-@pytest.mark.skip(reason="passed")
+# @pytest.mark.skip(reason="passed")
 def test_env():
     env = CustomEnv()
     observation, info = env.reset()
