@@ -2,7 +2,6 @@ import numpy as np
 
 
 class Validator():
-
     """
         The validator class is to represent the validator in the PoS Ethereum Blockchain.
 
